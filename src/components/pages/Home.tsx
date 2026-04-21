@@ -220,7 +220,7 @@
 		  const audioRef = useRef<HTMLAudioElement>(null);
 		
 		  useEffect(() => {
-			let interval = null;
+			let interval: number | undefined;
 		
 			if (isActive && seconds > 0) {
 			  interval = setInterval(() => {
