@@ -14,17 +14,17 @@
 		rest_time:number;
 	}
 
-	interface SetItem {
-		set1: string;
-		set2: string;
-		set3: string;
+	// interface SetItem {
+	// 	set1: string;
+	// 	set2: string;
+	// 	set3: string;
 	
-	}
+	// }
 
 	const API_URL = import.meta.env.VITE_API_BASE_URL;
 	function Home() {
 	    const [content, setContent] = useState<ContentItem[]>([]);
-		let [setList, setListing] = useState<SetItem[]>([]);
+		// let [setList, setListing] = useState<SetItem[]>([]);
 
 		const mGetTable = () => {
 			// In a real app, ensure your API route starts with / if it's absolute
@@ -44,7 +44,7 @@
 				.catch(err => console.error(err));
 		};
 
-		const isDropSet = (item: Array) => {
+		const isDropSet = (item: ContentItem) => {
 			let res = 0
 			if(item.dropsets == 0)
 				res = 1
@@ -58,7 +58,7 @@
 			);
 		};
 
-		const AdjustReps = (item: Array, adj: string) => {
+		const AdjustReps = (item: ContentItem, adj: string) => {
 			let res = 1
 			if(adj == "inc"){
 				if(item.reps != 20)
@@ -78,7 +78,7 @@
 			);
 		};
 
-		const AdjustRest = (item: Array, adj: string) => {
+		const AdjustRest = (item: ContentItem, adj: string) => {
 			let res = item.rest_time
 			if(adj == "inc"){
 					res = res+1
@@ -97,7 +97,7 @@
 			);
 		};
 
-		const AdjustSets = (item: Array, adj: string) => {
+		const AdjustSets = (item: ContentItem, adj: string) => {
 			
 			let res = item.sets
 			if(adj == "inc"){
@@ -118,7 +118,7 @@
 			);
 		};
 
-		const AdjustSpeed = (item: Array, adj: string) => {
+		const AdjustSpeed = (item: ContentItem, adj: string) => {
 			let res = 1
 			if(adj == "inc"){
 				if(item.speed != 3)
@@ -138,7 +138,7 @@
 			);
 		};
 		
-		const AdjustWeight = (item: Array, adj: String) => {
+		const AdjustWeight = (item: ContentItem, adj: String) => {
 			let result = item.weight
 			if(adj == 'inc'){
 				//dumbell limit
@@ -217,7 +217,7 @@
 
 		const [seconds, setSeconds] = useState(0);
 		  const [isActive, setIsActive] = useState(false);
-		  const audioRef = useRef(null);
+		  const audioRef = useRef<HTMLAudioElement>(null);
 		
 		  useEffect(() => {
 			let interval = null;
@@ -228,7 +228,7 @@
 			  }, 1000);
 			} else if (seconds === 0 && isActive) {
 			  // Time's up logic
-			  audioRef.current?.play().catch(e => console.log("Audio play blocked"));
+			  audioRef.current?.play().catch(() => console.log("Audio play blocked"));
 			  setIsActive(false);
 			  clearInterval(interval);
 			}
@@ -236,7 +236,7 @@
 			return () => clearInterval(interval);
 		  }, [isActive, seconds]);
 		
-		  const startTimer = (nums: Number) => {
+		  const startTimer = (nums: number) => {
 			// let index = content.findIndex(rec => rec.name == item.name)
 			// setListing
 			const num = nums
