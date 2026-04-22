@@ -14,32 +14,39 @@
 		rest_time:number;
 	}
 
-	// interface SetItem {
-	// 	set1: string;
-	// 	set2: string;
-	// 	set3: string;
-	
-	// }
+	interface SetItem {
+		_id?: string;
+		[key: string]: any; // This is the "magic" line for set1, set2, etc.
+	}
+
+	interface ApiResponse {
+		exercises: ContentItem[];
+		checklist: SetItem[];
+	}
 
 	const API_URL = import.meta.env.VITE_API_BASE_URL;
 	function Home() {
 	    const [content, setContent] = useState<ContentItem[]>([]);
-		// let [setList, setListing] = useState<SetItem[]>([]);
+		let [setList, setListing] = useState<SetItem[]>([]);
 
 		const mGetTable = () => {
 			// In a real app, ensure your API route starts with / if it's absolute
-			axios.get<ContentItem[]>(`${API_URL}/api/sample`) 
+			axios.get<ApiResponse>(`${API_URL}/api/sample`) 
 				.then((res) => {
-					setContent(res.data);
+					setContent(res.data.exercises);
+           			setListing(res.data.checklist);
+
 				})
 				.catch(err => console.error(err));
 		};
 
+
 		const mNext = () => {
 			// In a real app, ensure your API route starts with / if it's absolute
-			axios.post<ContentItem[]>(`${API_URL}/api/next`,{content}) 
+			axios.post<ApiResponse>(`${API_URL}/api/next`,{content}) 
 				.then((res) => {
-					setContent(res.data);
+					setContent(res.data.exercises);
+           			setListing(res.data.checklist);
 				})
 				.catch(err => console.error(err));
 		};
@@ -236,8 +243,21 @@
 			return () => clearInterval(interval);
 		  }, [isActive, seconds]);
 		
-		  const startTimer = (nums: number) => {
-			// let index = content.findIndex(rec => rec.name == item.name)
+		  const startTimer = (item: ContentItem, nums: number, setNum: number) => {
+			let index = content.findIndex(rec => rec.name == item.name)
+			if (index !== -1) {
+				// 2. Update the checklist state
+				const updatedListing = [...setList];
+				const setKey = `set${setNum+1}`; // e.g., "set1"
+				
+				// Toggle to "check" when the timer starts
+				updatedListing[index][setKey] = "check";
+				setListing(updatedListing);
+			}
+
+				axios.patch(`${API_URL}/api/updatecheck?index=${index}&set=${setNum+1}`) 
+				.catch(err => console.error(err));
+
 			// setListing
 			const num = nums
 			if (num > 0) {
@@ -287,16 +307,28 @@
 							<tr>
 								<td className="px-4 py-3 font-medium text-slate-900">Sets</td>
 								<td className="px-4 py-3">
-									{[...Array(Number(item.sets))].map((_, index) => (
-									<input 
-										disabled={isActive}
-										key={index}
-										onClick={() => startTimer(item.rest_time)}
-										type="checkbox" 
-										className="mr-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-									/>
-									))}
+									{[...Array(Number(item.sets))].map((_, index) => {
+									// 1. Construct the key name (e.g., "set1", "set2")
+									const setKey = `set${index + 1}`;
+									
+									// 2. Safely check if this specific set is marked as "check"
+									// setList[i] matches the current exercise in the content.map loop
+									const isChecked = setList[i] && setList[i][setKey] === "check";
 
+									return (
+										<input 
+											key={index}
+											type="checkbox"
+											// 3. Link the checkbox visual state to your data
+											checked={isChecked} 
+											disabled={isActive || isChecked}
+											// 4. Update the DB/State when clicked
+											// onChange={() => handleToggleCheck(i, setKey)}
+											onClick={() => startTimer(item, item.rest_time, index)}
+											className="mr-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+										/>
+									);
+								})}
 								</td>
 								<td className="px-4 py-3 text-right space-x-1">
 									<button onClick={() => AdjustSets(item, "inc")} className="px-2 py-0 bg-indigo-600 text-white rounded hover:bg-indigo-700">+</button>

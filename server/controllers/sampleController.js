@@ -9,7 +9,13 @@ const get_table = async (req, res) => {
         // 3. Use 'db' directly (this replaces db.sample_db)
         let target = await db.collection("Target").find({schedule:"today"}).sort().toArray();
         let result = await db.collection("Exercise").find({target:target[0].target}).sort().toArray();
-        res.send(result);
+
+        let checklist = await db.collection("Checklist").find().sort().toArray();
+       
+        res.send({
+            exercises: result,
+            checklist: checklist
+        });
     } catch (err) {
         console.error("Fetch Error:", err.message);
         return res.status(400).json({ error: err.message });
@@ -20,6 +26,8 @@ const next = async (req, res) => {
     try {
         // 2. Await the database instance to ensure it's connected
         const db = await getDb(); 
+
+        await db.collection("Checklist").deleteMany({})
         let data = req.body.content;
 
         for(let x=0; x < data.length; x++){
@@ -64,12 +72,48 @@ const next = async (req, res) => {
 
         let target = await db.collection("Target").find({schedule:"today"}).sort().toArray();
         let result = await db.collection("Exercise").find({target:target[0].target}).sort().toArray();
-      
-        res.send(result);
+        
+        let checkarray = [];
+        for (let y = 0; y < result.length; y++) {
+        // 1. Create a fresh object for this specific result item
+            let newEntry = {};
+
+            for (let z = 0; z < result[y].sets; z++) {
+                // 2. Dynamically add "set1", "set2", etc. to the object
+                newEntry["set" + (z + 1)] = "uncheck";
+            }
+
+            // 3. Push the completed object into the array
+            checkarray.push(newEntry);
+        }
+
+        // 4. Insert the array of objects into MongoDB
+        await db.collection("Checklist").insertMany(checkarray);
+        let checklist = await db.collection("Checklist").find().sort().toArray();
+        res.send({
+            exercises: result,
+            checklist: checklist
+        });
     } catch (err) {
         console.error("Fetch Error:", err.message);
         return res.status(400).json({ error: err.message });
     }
+};
+
+const updatecheck = async (req, res) => {
+    const { index, set } = req.query; 
+    const setKey = `set${set}`; // e.g., "set1"
+
+    const db = await getDb();
+
+        const checklist = await db.collection("Checklist").find().toArray();
+        const targetDoc = checklist[parseInt(index)];
+        await db.collection("Checklist").updateOne(
+            { _id: targetDoc._id }, 
+            { $set: { [setKey]: "check" } } 
+        );
+
+        res.status(200).send("Updated");
 };
 
 const insert_data = async (req, res) => {
@@ -100,4 +144,4 @@ const insert_data = async (req, res) => {
     }
 };
 
-module.exports = { get_table, next, insert_data };
+module.exports = { get_table, next, updatecheck, insert_data };
