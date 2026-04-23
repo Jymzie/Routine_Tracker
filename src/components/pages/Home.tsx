@@ -334,6 +334,12 @@
 									{[...Array(Number(item.sets))].map((_, index) => {
 									// 1. Construct the key name (e.g., "set1", "set2")
 									const setKey = `set${index + 1}`;
+									let isPrevUnchecked = false;
+									if (index > 0) {
+										const prevSetKey = `set${index}`; // The key for the previous set
+										const prevStatus = setList[i] && setList[i][prevSetKey];
+										isPrevUnchecked = prevStatus !== "check"; 
+									}
 									
 									// 2. Safely check if this specific set is marked as "check"
 									// setList[i] matches the current exercise in the content.map loop
@@ -345,7 +351,7 @@
 											type="checkbox"
 											// 3. Link the checkbox visual state to your data
 											checked={isChecked} 
-											disabled={isActive || isChecked}
+											disabled={isActive || isChecked || isPrevUnchecked}
 											// 4. Update the DB/State when clicked
 											// onChange={() => handleToggleCheck(i, setKey)}
 											onClick={() => startTimer(item, item.rest_time, index)}
