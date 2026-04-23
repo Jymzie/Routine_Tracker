@@ -1,5 +1,6 @@
 	import { useState, useEffect, useRef } from 'react';
 	import axios from 'axios';
+	import { Loader2 } from "lucide-react";
 
 	interface ContentItem {
 		name: string;
@@ -43,6 +44,7 @@
 
 		const mNext = () => {
 			// In a real app, ensure your API route starts with / if it's absolute
+			setContent([]);
 			axios.post<ApiResponse>(`${API_URL}/api/next`,{content}) 
 				.then((res) => {
 					setContent(res.data.exercises);
@@ -88,11 +90,11 @@
 		const AdjustRest = (item: ContentItem, adj: string) => {
 			let res = item.rest_time
 			if(adj == "inc"){
-					res = res+1
+					res = res+10
 			}
 			else{
-				if(res != 0)
-					res = res-1
+				if(res != 10)
+					res = res-10
 			}
 
 			setContent((prevContent) => 
@@ -222,8 +224,24 @@
 			mGetTable();
 		}, []);
 
+		useEffect(() => {
+			outerLoop:
+			for(let x=0; x < setList.length; x++){
+				for(let y=0; y < content[x].sets; y++){
+					if(setList[x]["set"+(y+1)] == "uncheck"){
+						
+						break outerLoop;
+					}
+				}
+				if(x == setList.length-1){
+					setcanDone(true)
+				}
+			}
+		}, [setList])
+
 		const [seconds, setSeconds] = useState(0);
 		  const [isActive, setIsActive] = useState(false);
+		  const [canDone, setcanDone] = useState(false);
 		  const audioRef = useRef<HTMLAudioElement>(null);
 		
 		  useEffect(() => {
@@ -255,8 +273,9 @@
 				setListing(updatedListing);
 			}
 
-				axios.patch(`${API_URL}/api/updatecheck?index=${index}&set=${setNum+1}`) 
-				.catch(err => console.error(err));
+			
+			axios.patch(`${API_URL}/api/updatecheck?index=${index}&set=${setNum+1}`) 
+			.catch(err => console.error(err));
 
 			// setListing
 			const num = nums
@@ -265,7 +284,12 @@
 			  setIsActive(true);
 			}
 		  };
-
+		if (content.length == 0) return(
+			<div className="col-span-full flex flex-col items-center justify-center text-black text-center py-20 text-2xl">
+				<Loader2 className="h-10 w-10 text-gray-500 animate-spin mb-4" />
+				<p className="[text-shadow:_1px_0_4px_rgb(255_255_255_/_0.8)]">Loading...</p>
+			</div>
+		)
 	    return (
 	        	//Home.tsx html code
 			<div>
@@ -394,7 +418,7 @@
 					
 				</div>
 				 ))}
-				 <button onClick={mNext} className="mb-5 px-4 py-1 ml-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+				 <button onClick={mNext} disabled={!canDone} className="mb-5 px-4 py-1 ml-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
 					Done
 				</button>
 
@@ -406,7 +430,7 @@
 						{(seconds % 60).toString().padStart(2, '0')}
 					</div>
 
-					{/* {!isActive && seconds === 0 ? ( */}
+					{!isActive && seconds === 0 ? (
 						<div className="flex gap-2 w-full">
 						{/* <input
 							type="number"
@@ -422,16 +446,16 @@
 							Go
 						</button> */}
 						</div>
-					{/* ) 
+					 ) 
 					: (
 						<button 
 						onClick={() => {setIsActive(false); setSeconds(0);}}
 						className="w-full bg-red-100 hover:bg-red-200 text-red-600 py-2 rounded-lg font-semibold transition"
 						>
-						Reset
+						Speed Up
 						</button>
 					)
-					} */}
+					} 
 
 					{/* Hidden Audio Element */}
 					<audio ref={audioRef} src="alarm.mp3" />
